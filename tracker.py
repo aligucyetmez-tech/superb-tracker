@@ -5,10 +5,11 @@ from config import SEARCH_URLS
 def get_listings():
     listings = []
 
-    with sync_playwright() as p:
-        browser = p.chromium.launch(
-            headless=True
-        )
+    browser = p.chromium.launch(
+    headless=True,
+    args=["--no-sandbox"]
+)
+        
 
         page = browser.new_page(
             user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36"
