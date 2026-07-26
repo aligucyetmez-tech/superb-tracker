@@ -8,6 +8,7 @@ def get_listings():
     with sync_playwright() as p:
         browser = p.chromium.launch(
             headless=True,
+            executable_path="/opt/render/.cache/ms-playwright/chromium-1228/chrome-linux64/chrome",
             args=["--no-sandbox"]
         )
 
