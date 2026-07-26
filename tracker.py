@@ -13,11 +13,13 @@ def get_listings():
         try:
             r = requests.get(url, headers=headers, timeout=20)
             soup = BeautifulSoup(r.text, "lxml")
+            print(r.status_code)
+print(r.text[:500])
 
             for link in soup.select("a"):
                 href = link.get("href")
 
-                if href and "/ilan/" in href:
+                if href and "ilan" in href:
                     listings.append("https://www.sahibinden.com" + href)
 
         except Exception:
