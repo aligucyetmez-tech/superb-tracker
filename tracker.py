@@ -1,41 +1,65 @@
-import requests
+from playwright.sync_api import sync_playwright
 from bs4 import BeautifulSoup
-from config import SEARCH_URLS
 
 
-HEADERS = {
-    "User-Agent": (
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) "
-        "Chrome/131 Safari/537.36"
-    )
-}
+SEARCH_URLS = [
+    "https://www.sahibinden.com/arama?pagingOffset=20&a116445=1263354&a6=32466&sorting=price_asc&a4_max=40000&a5_min=2024&category=257420&category=256774&category=254356&unchangingTracks=true&utm_source=paylas&utm_medium=arama_sonuc&utm_campaign=sahibinden_paylas&utm_content=174536269"
+]
 
 
 def get_listings():
+
     listings = []
 
-    session = requests.Session()
-    session.headers.update(HEADERS)
+    with sync_playwright() as p:
 
-    for url in SEARCH_URLS:
-        try:
-            response = session.get(url, timeout=30)
+        browser = p.chromium.launch(
+            headless=True,
+            args=[
+                "--no-sandbox",
+                "--disable-dev-shm-usage"
+            ]
+        )
 
-            print("Status:", response.status_code)
+        page = browser.new_page(
+            user_agent=(
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+                "AppleWebKit/537.36 "
+                "Chrome/120 Safari/537.36"
+            )
+        )
 
-            soup = BeautifulSoup(response.text, "lxml")
+        for url in SEARCH_URLS:
 
-            for a in soup.find_all("a", href=True):
-                link = a["href"]
+            print("Açılıyor:", url)
 
-                if "/ilan/" in link:
-                    if link.startswith("/"):
-                        link = "https://www.sahibinden.com" + link
+            page.goto(
+                url,
+                wait_until="networkidle",
+                timeout=60000
+            )
 
-                    listings.append(link)
+            html = page.content()
 
-        except Exception as e:
-            print("Hata:", e)
+            soup = BeautifulSoup(
+                html,
+                "lxml"
+            )
 
-    return list(set(listings))
+            items = soup.select(
+                ".searchResultsItem"
+            )
+
+            print("Bulunan:", len(items))
+
+            for item in items:
+                text = item.get_text(
+                    " ",
+                    strip=True
+                )
+
+                listings.append(text)
+
+        browser.close()
+
+    return listings
