@@ -1,40 +1,34 @@
-import requests
-from bs4 import BeautifulSoup
+from playwright.sync_api import sync_playwright
 from config import SEARCH_URLS
-
-headers = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36",
-    "Accept-Language": "tr-TR,tr;q=0.9,en-US;q=0.8,en;q=0.7",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-    "Referer": "https://www.sahibinden.com/"
-}
 
 
 def get_listings():
     listings = []
 
-    for url in SEARCH_URLS:
-        try:
-            r = requests.get(
-                url,
-                headers=headers,
-                timeout=20
-            )
+    with sync_playwright() as p:
+        browser = p.chromium.launch(
+            headless=True
+        )
 
-            print("Status:", r.status_code)
+        page = browser.new_page(
+            user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131 Safari/537.36"
+        )
 
-            soup = BeautifulSoup(r.text, "lxml")
+        for url in SEARCH_URLS:
+            try:
+                page.goto(url, wait_until="networkidle", timeout=60000)
 
-            for link in soup.select("a"):
-                href = link.get("href")
+                links = page.locator("a").evaluate_all(
+                    "(els) => els.map(e => e.href)"
+                )
 
-                if href and "ilan" in href:
-                    if href.startswith("/"):
-                        listings.append(
-                            "https://www.sahibinden.com" + href
-                        )
+                for link in links:
+                    if "/ilan/" in link:
+                        listings.append(link)
 
-        except Exception as e:
-            print("Hata:", e)
+            except Exception as e:
+                print("Hata:", e)
+
+        browser.close()
 
     return list(set(listings))
