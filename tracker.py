@@ -17,7 +17,11 @@ def get_listings():
 
         for url in SEARCH_URLS:
             try:
-                page.goto(url, wait_until="networkidle", timeout=60000)
+                page.goto(
+                    url,
+                    wait_until="domcontentloaded",
+                    timeout=60000
+                )
 
                 links = page.locator("a").evaluate_all(
                     "(els) => els.map(e => e.href)"
